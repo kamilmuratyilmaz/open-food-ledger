@@ -21,10 +21,15 @@ Tek gereken: Docker.
 ```bash
 git clone <repo-url> open-food-ledger
 cd open-food-ledger
-docker compose up --build
+docker compose -f compose.dev.yml up --build
 ```
 
-Üç container kalkar:
+Production benzeri stack için (frontend yok, source baked, no reload):
+```bash
+docker compose -f compose.prod.yml up --build -d
+```
+
+Dev stack'inde dört container kalkar:
 
 | Container | Port | Ne yapar |
 |---|---|---|
@@ -34,7 +39,7 @@ docker compose up --build
 
 Tarayıcıda **http://localhost:5173** adresini aç, **Create account** ile kayıt ol (şifre min. 8 karakter), yemek eklemeye başla. İlk açılışta Postgres bir-iki saniye init olur, tablolar otomatik yaratılır.
 
-> **Not:** `frontend` container'ı dev-grade Vite dev server kullanır (HMR + source bind mount). Production deployment (static hosting, CDN, edge cache) bu repo'nun scope'u dışında — CI/CD veya cloud provider tarafına bırakılır (Vercel, Cloudflare Pages, S3 + CloudFront, vb.).
+> **Not:** `frontend` container'ı dev-grade Vite dev server kullanır (HMR + source bind mount). `compose.prod.yml`'de frontend service'i **yok** — production deployment (static hosting, CDN, edge cache) CI/CD veya cloud provider tarafına bırakılır (Vercel, Cloudflare Pages, S3 + CloudFront, vb.).
 
 ## Yapay zekaya bağlamak
 
@@ -73,7 +78,7 @@ uv run uvicorn app.main:app --reload
 
 `pyproject.toml` + `uv.lock` tek kaynak — `requirements.txt` yok. Yeni dependency için: `uv add <paket>`.
 
-`docker-compose.yml`'de api service'i `--reload` ile çalışır ve `./app` host'tan mount'lanır — Python kod değişiklikleri anında yansır (frontend container'ını yeniden build etmen gerekmez).
+`compose.dev.yml`'de api service'i `target: dev` build target'ı ile çalışır (Dockerfile'da `--reload` baked) ve `./app` host'tan mount'lanır — Python kod değişiklikleri anında yansır. `compose.prod.yml` ise `target: prod` kullanır: source baked, bind mount yok, reload yok.
 
 **Frontend (Vite hot-reload, Node 18+):**
 ```bash

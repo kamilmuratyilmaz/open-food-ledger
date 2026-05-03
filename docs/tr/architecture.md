@@ -32,7 +32,12 @@
                   └─────────────────────────────┘
 ```
 
-`docker compose up` dört container'ı kaldırır: **frontend** (Node 20 + Vite dev server, HMR), **api** (FastAPI, sadece JSON), **mcp** (FastMCP HTTP transport + OAuth, `mcp_server/Dockerfile`), **db** (Postgres). Bu compose stack'i **development içindir** — production static hosting / CDN / TLS terminator burada yok, CI/CD veya cloud provider tarafına bırakılır. MCP container'ı compose internal DNS üzerinden API'ye bağlanıyor (`FOOD_API_URL=http://api:8000`), `MCP_PUBLIC_URL` browser'a görünen URL (local'de `http://localhost:8001`, production'da public domain'i koy).
+İki compose dosyası var:
+
+- **`compose.dev.yml`** — dört container kaldırır: **frontend** (Vite dev server, HMR), **api** (FastAPI `target: dev`, `--reload`, source bind mount), **mcp** (FastMCP HTTP + OAuth, source bind mount), **db** (Postgres). `docker compose -f compose.dev.yml up --build`.
+- **`compose.prod.yml`** — üç container: **api** (`target: prod`, source baked, no reload, no bind mount), **mcp** (image-baked source), **db**. Frontend YOK — production'da CI/CD ile static build → CDN/static host. `docker compose -f compose.prod.yml up --build -d`.
+
+`Dockerfile`'in multi-stage yapısı dev/prod farkını sağlıyor (`base` → `dev` → `prod` stage'leri, `dev` ve `prod` aynı katmanlardan türeyip sadece CMD'de farklılaşıyor — biri `--reload` ekler, diğeri eklemez). MCP container'ı compose internal DNS üzerinden API'ye bağlanıyor (`FOOD_API_URL=http://api:8000`); `MCP_PUBLIC_URL` browser'a görünen URL (local'de `http://localhost:8001`, production'da public domain).
 
 ## Auth modeli
 

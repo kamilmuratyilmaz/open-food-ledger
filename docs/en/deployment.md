@@ -8,7 +8,14 @@ MCP client connectors (and public OAuth flows in general) won't complete a hands
 
 ## 2. Get secrets out of compose
 
-The hardcoded values today (DB password, `ALLOWED_ORIGINS`, `MCP_PUBLIC_URL`) shouldn't make it to production. Use a gitignored env file, Docker secrets, or your cloud provider's secret manager.
+`compose.prod.yml` now reads from `.env.prod` (via `env_file:` directives). Before your first deploy:
+
+```bash
+cp .env.prod.example .env.prod
+# edit .env.prod: real POSTGRES_PASSWORD, DATABASE_URL, ALLOWED_ORIGINS, MCP_PUBLIC_URL
+```
+
+`.env.prod` is in `.gitignore` (never committed); `.env.prod.example` is a template that lives in the repo. For tougher setups: inject env vars from your cloud's secret manager (AWS Secrets Manager, Vault, etc.) at deploy time so `.env.prod` never touches disk.
 
 ## 3. Move the frontend to a CDN
 
@@ -20,11 +27,34 @@ If you self-host Postgres in compose, backups, replication, point-in-time recove
 
 ## 5. Run migrations as a deploy step
 
-The repo already ships with Alembic (`migrations/` directory, `alembic.ini`). The compose api service runs `alembic upgrade head` before starting the app — fine for single-replica dev. For production:
+The repo ships with Alembic (`migrations/` directory, `alembic.ini`). On the single-replica dev/prod stacks the api container runs `alembic upgrade head` on boot — fine.
 
-- If you scale to multiple replicas, run the migration as a **separate CI/CD step** before the app boots. Replicas trying to upgrade simultaneously can race (Alembic uses advisory locks, but it's not bulletproof).
-- If migration fails, halt the pipeline; don't start the app expecting a new schema.
-- New migration: `uv run alembic revision --autogenerate -m "..."` after changing a model. The migration file goes into the PR for code review.
+**Once you scale to multiple replicas** (2+ api copies behind a load balancer): if all of them race on `alembic upgrade head` at the same time, they can corrupt the schema or the alembic_version table. Alembic uses a Postgres advisory lock but it isn't a 100% guarantee. So the migration must run **separately from container boot**, as a deploy step.
+
+A ready-to-use script ships with the repo:
+
+```bash
+./scripts/migrate.sh
+```
+
+It spins up a one-off container (same image as the api service, but with `alembic upgrade head` instead of uvicorn), runs the migration, exits, and cleans itself up. Idempotent — a no-op when there are no pending migrations.
+
+**CI/CD pipeline order:**
+1. Build & push the new image to the registry
+2. `./scripts/migrate.sh` (pointed at the production DB via env)
+3. If step 2 fails, abort the pipeline — don't start the app expecting a schema that isn't there; users would get 500s
+4. If step 2 succeeds, roll out the new api containers (the migration is already applied, so they only need to run uvicorn)
+
+When you actually go multi-replica: drop the `alembic upgrade head &&` prefix from the prod compose api `command:` and leave only uvicorn — the script handles migrations.
+
+**Adding a new migration (dev workflow):**
+```bash
+# 1. Change the model (e.g., add a column in app/db/models.py)
+# 2. Generate the migration
+uv run alembic revision --autogenerate -m "add display_name to users"
+# 3. Commit migrations/versions/xxx_add_display_name_to_users.py with the PR
+# 4. The reviewer reads the migration file as part of the diff
+```
 
 ## 6. Add rate limiting
 

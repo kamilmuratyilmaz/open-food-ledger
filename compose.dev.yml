@@ -16,7 +16,9 @@ services:
       retries: 10
 
   api:
-    build: .
+    build:
+      context: .
+      target: dev
     depends_on:
       db:
         condition: service_healthy
@@ -31,9 +33,7 @@ services:
       # Make new migrations visible without an image rebuild
       - ./migrations:/app/migrations
       - ./alembic.ini:/app/alembic.ini
-    # Run pending migrations before starting the app. Schema lifecycle is
-    # managed entirely by Alembic — the application code does no create_all.
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    # CMD already includes --reload via the dev stage; no command override needed.
 
   frontend:
     build:
@@ -62,11 +62,12 @@ services:
       # Inside compose, MCP talks to the API via the service hostname.
       FOOD_API_URL: http://api:8000
       # Browser-facing URL for OAuth metadata (Claude.ai/ChatGPT discover this).
-      # For public access put your ngrok/Cloudflare/CDN URL here.
       MCP_PUBLIC_URL: http://localhost:8001
-      # MCP_TRANSPORT defaults to "http" in the image; OAuth auto-enabled.
     ports:
       - "8001:8001"
+    volumes:
+      # Source iteration on the MCP server without an image rebuild.
+      - ./mcp_server:/app/mcp_server
     # Compose-level hardening (Dockerfile already runs as non-root uid 1000)
     cap_drop: [ALL]
     security_opt:

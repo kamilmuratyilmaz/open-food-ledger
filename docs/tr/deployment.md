@@ -8,7 +8,14 @@ MCP client connector'ları (ve genel olarak public OAuth flow'u) HTTPS olmadan h
 
 ## 2. Secrets compose'dan çıksın
 
-Mevcut hardcoded değerler (DB şifresi, `ALLOWED_ORIGINS`, `MCP_PUBLIC_URL`) production'a gitmemeli. Yerine env file (gitignore'lu), Docker secret, ya da bulut sağlayıcının secret manager'ı kullan.
+`compose.prod.yml` artık `.env.prod` dosyasından okuyor (`env_file:` direktifi). İlk deploy'dan önce:
+
+```bash
+cp .env.prod.example .env.prod
+# .env.prod'u editle: gerçek POSTGRES_PASSWORD, DATABASE_URL, ALLOWED_ORIGINS, MCP_PUBLIC_URL
+```
+
+`.env.prod` `.gitignore`'da (commit'e gitmez), `.env.prod.example` template repo'da. Daha hardcore: bulut sağlayıcının secret manager'ından (AWS Secrets Manager, Vault, vb.) deploy time'da inject et — `.env.prod` dosyası diskte hiç durmasın.
 
 ## 3. Frontend'i CDN'e at
 
@@ -20,11 +27,34 @@ Postgres'i compose ile self-host yapacaksan backup, replication, point-in-time r
 
 ## 5. Migration'ları deploy step'inde çalıştır
 
-Repo Alembic ile geliyor (`migrations/` klasörü, `alembic.ini`). Compose'da api service'i app start'tan önce `alembic upgrade head` koşuyor — single-replica dev için yeterli. Production'da:
+Repo Alembic ile geliyor (`migrations/` klasörü, `alembic.ini`). Tek replica'lı dev/prod stack'inde api container'ı boot olurken `alembic upgrade head` zaten koşar — sorun yok.
 
-- Multi-replica deployment'a geçeceksen migration'ı **CI/CD pipeline'ında** ayrı bir step olarak çalıştır, app boot'tan önce. Her replica'nın aynı anda upgrade çalıştırması race condition yaratabilir (Alembic advisory lock kullanıyor ama %100 garanti değil).
-- Migration başarısız olursa pipeline'ı dur, app'i yeni schema beklerek başlatma.
-- Yeni migration: `uv run alembic revision --autogenerate -m "..."` model değişikliğinden sonra. PR'a giriyor, code review'a açık.
+**Multi-replica'ya geçtiğinde** (yük dengeleyici arkasında 2+ api kopyası): hepsi aynı anda upgrade'e kalkışırsa race condition yaratabilir. Alembic Postgres advisory lock kullanır ama %100 garantili değil. O yüzden migration **container boot'undan ayrı**, deploy adımı olarak koşmalı.
+
+Repo'da hazır script var:
+
+```bash
+./scripts/migrate.sh
+```
+
+Bu script tek seferlik bir container açar (api image'ından, ama uvicorn yerine `alembic upgrade head`), DB'ye karşı koşar, biter, kendini temizler. Idempotent — pending migration yoksa no-op.
+
+**CI/CD pipeline akışı:**
+1. Yeni image'ı build et + registry'e push et
+2. `./scripts/migrate.sh` (DATABASE_URL prod DB'yi gösteriyor olmalı)
+3. Adım 2 başarısızsa pipeline'ı dur — app'i yeni schema beklerek başlatma, kullanıcı 500'lere düşer
+4. Adım 2 başarılıysa api container'larını rolling-update et (artık migration zaten yapılmış, container'ların sadece uvicorn koşması yeter)
+
+Multi-replica'ya geçince: prod compose'daki api `command:`'ından `alembic upgrade head &&` kısmını çıkar, sadece uvicorn bıraksın — script zaten halletmiş olacak.
+
+**Yeni migration eklemek (dev workflow):**
+```bash
+# 1. Modeli değiştir (örn. app/db/models.py'a yeni kolon ekle)
+# 2. Migration üret
+uv run alembic revision --autogenerate -m "add display_name to users"
+# 3. migrations/versions/xxx_add_display_name_to_users.py git'e gir, PR'a koy
+# 4. Reviewer migration file'ını da diff'te görür ve inceler
+```
 
 ## 6. Rate limiting ekle
 

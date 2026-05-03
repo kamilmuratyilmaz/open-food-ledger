@@ -32,7 +32,12 @@
                   └─────────────────────────────┘
 ```
 
-`docker compose up` brings up four containers: **frontend** (Node 20 + Vite dev server, HMR), **api** (FastAPI, JSON only), **mcp** (FastMCP HTTP transport + OAuth, `mcp_server/Dockerfile`), **db** (Postgres). This compose stack is **for development** — production static hosting / CDN / TLS termination is out of scope and left to your CI/CD or cloud provider. The MCP container reaches the API via compose internal DNS (`FOOD_API_URL=http://api:8000`); `MCP_PUBLIC_URL` is the user-facing URL (locally `http://localhost:8001`, in production your public domain).
+Two compose files:
+
+- **`compose.dev.yml`** — brings up four containers: **frontend** (Vite dev server, HMR), **api** (FastAPI `target: dev`, `--reload`, source bind mount), **mcp** (FastMCP HTTP + OAuth, source bind mount), **db** (Postgres). Run with `docker compose -f compose.dev.yml up --build`.
+- **`compose.prod.yml`** — three containers: **api** (`target: prod`, source baked, no reload, no bind mount), **mcp** (image-baked source), **db**. No frontend — production deploys the static build to a CDN / static host via CI/CD. Run with `docker compose -f compose.prod.yml up --build -d`.
+
+The dev/prod difference is enforced by the `Dockerfile`'s multi-stage layout (`base` → `dev` → `prod`). `dev` and `prod` share all layers and differ only in their `CMD` — one adds `--reload`, the other doesn't. The MCP container reaches the API via compose internal DNS (`FOOD_API_URL=http://api:8000`); `MCP_PUBLIC_URL` is the user-facing URL (locally `http://localhost:8001`, in production your public domain).
 
 ## Auth model
 

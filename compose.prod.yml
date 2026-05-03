@@ -1,0 +1,74 @@
+# Production compose stack.
+#
+# Differences from compose.dev.yml:
+#   - api built from `target: prod` (no --reload, source baked into image)
+#   - no host bind mounts on api or mcp (immutable images)
+#   - secrets and per-environment config come from `.env.prod` (gitignored)
+#     instead of being hardcoded; copy `.env.prod.example` and fill in
+#   - frontend service is intentionally absent — production frontend is a
+#     static build deployed to a CDN / static host via your CI/CD pipeline,
+#     not a Vite dev server in a container
+#
+# Hardening that is OUT OF SCOPE for this file (left to your deploy target):
+# hiding the DB port, resource limits, full TLS terminator, log driver
+# tuning, multi-replica orchestration. See docs/*/deployment.md.
+#
+# Usage:
+#   cp .env.prod.example .env.prod   # then edit .env.prod
+#   docker compose -f compose.prod.yml up --build -d
+
+services:
+  db:
+    image: postgres:16-alpine
+    env_file: .env.prod
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      target: prod
+    env_file: .env.prod
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    # No volumes: source, alembic.ini and migrations are baked into the image.
+    # No command override: uses the prod stage's CMD (no --reload).
+
+  mcp:
+    build:
+      context: .
+      dockerfile: mcp_server/Dockerfile
+    env_file: .env.prod
+    depends_on:
+      - api
+    environment:
+      # FOOD_API_URL is internal compose DNS — never changes between deploys,
+      # so it lives here rather than in .env.prod.
+      FOOD_API_URL: http://api:8000
+    ports:
+      - "8001:8001"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8001/.well-known/oauth-authorization-server', timeout=3).status == 200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  pgdata:
