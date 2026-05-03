@@ -14,14 +14,15 @@
    └─────────────┬───────────────┘               │                 │
                  │                               │                 │
                  ▼                               ▼                 ▼
-   ┌─────────────────────────────┐ ◀ :8000   ┌──────────────────────────┐
-   │  api  (FastAPI)             │           │  MCP Server (host proc)  │ ◀ :8001
+   ┌─────────────────────────────┐ ◀ :8000   ┌──────────────────────────┐ ◀ :8001
+   │  api  (FastAPI)             │           │  mcp  (FastMCP container)│
    │  /api/auth/*                │           │  /mcp                    │
    │  /api/entries/*             │           │  /authorize, /token      │
    │  /api/analytics/*           │           │  /oauth/login            │
    │  /api/export/*              │           │  /.well-known/*          │
    │  /docs                      │           └────────────┬─────────────┘
    └─────────────┬───────────────┘                        │
+                 │                            FOOD_API_URL=http://api:8000
                  │                                        │
                  └──────────────┬─────────────────────────┘
                                 ▼
@@ -31,7 +32,7 @@
                   └─────────────────────────────┘
 ```
 
-`docker compose up` üç container'ı kaldırır: **frontend** (Node 20 + Vite dev server, HMR), **api** (FastAPI, sadece JSON), **db** (Postgres). Bu compose stack'i **development içindir** — production static hosting / CDN / TLS terminator burada yok, CI/CD veya cloud provider tarafına bırakılır. MCP server şu an compose dışında — host process veya ayrı kapsayıcı olarak çalıştırılır, MCP client'ları doğrudan bağlanıyor.
+`docker compose up` dört container'ı kaldırır: **frontend** (Node 20 + Vite dev server, HMR), **api** (FastAPI, sadece JSON), **mcp** (FastMCP HTTP transport + OAuth, `mcp_server/Dockerfile`), **db** (Postgres). Bu compose stack'i **development içindir** — production static hosting / CDN / TLS terminator burada yok, CI/CD veya cloud provider tarafına bırakılır. MCP container'ı compose internal DNS üzerinden API'ye bağlanıyor (`FOOD_API_URL=http://api:8000`), `MCP_PUBLIC_URL` browser'a görünen URL (local'de `http://localhost:8001`, production'da public domain'i koy).
 
 ## Auth modeli
 

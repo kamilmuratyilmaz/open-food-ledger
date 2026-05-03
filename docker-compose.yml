@@ -47,5 +47,34 @@ services:
       - ./frontend:/app
       - /app/node_modules
 
+  mcp:
+    build:
+      context: .
+      dockerfile: mcp_server/Dockerfile
+    depends_on:
+      - api
+    environment:
+      # Inside compose, MCP talks to the API via the service hostname.
+      FOOD_API_URL: http://api:8000
+      # Browser-facing URL for OAuth metadata (Claude.ai/ChatGPT discover this).
+      # For public access put your ngrok/Cloudflare/CDN URL here.
+      MCP_PUBLIC_URL: http://localhost:8001
+      # MCP_TRANSPORT defaults to "http" in the image; OAuth auto-enabled.
+    ports:
+      - "8001:8001"
+    # Compose-level hardening (Dockerfile already runs as non-root uid 1000)
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8001/.well-known/oauth-authorization-server', timeout=3).status == 200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
 volumes:
   pgdata:
