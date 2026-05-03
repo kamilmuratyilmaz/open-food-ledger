@@ -3,41 +3,35 @@
 ## Bileşenler
 
 ```
-┌──────────┐   ┌────────────┐   ┌────────────┐
-│   SPA    │   │   Claude   │   │  ChatGPT   │
-│ (browser)│   │  Desktop   │   │  Connector │
-└─────┬────┘   └─────┬──────┘   └─────┬──────┘
-      │              │                │
-      │  bearer      │  stdio         │  OAuth + bearer
-      │  (paste)     │  (subprocess)  │  (HTTPS)
-      └─────┬────────┴────────────────┘
-            │
-   ┌────────▼─────────┐  ◀ port 8000
-   │    FastAPI       │
-   │   /api/auth/*    │
-   │   /api/entries/* │
-   │   /api/analytics/*│
-   │   /api/export/*  │
-   │   StaticFiles    │  ← SPA /
-   └────────┬─────────┘
-            │
-   ┌────────▼─────────┐  ◀ port 8001 (HTTP modunda)
-   │   MCP Server     │
-   │   /mcp           │  ← streamable HTTP transport
-   │   /authorize     │
-   │   /token         │
-   │   /oauth/login   │
-   │   /.well-known/* │
-   └────────┬─────────┘
-            │
-   ┌────────▼─────────┐
-   │   PostgreSQL 16  │
-   │   users          │
-   │   food_entries   │
-   └──────────────────┘
+                  Browser                   Claude Desktop      ChatGPT
+                     │                           │                 │
+                     │ http                      │ stdio           │ OAuth + bearer
+                     ▼                           │                 │
+   ┌─────────────────────────────┐ ◀ :5173       │                 │
+   │  frontend  (Vite dev)       │               │                 │
+   │  ─ React SPA + HMR          │               │                 │
+   │  ─ /api/* proxy → api:8000  │  (vite.config) │                 │
+   └─────────────┬───────────────┘               │                 │
+                 │                               │                 │
+                 ▼                               ▼                 ▼
+   ┌─────────────────────────────┐ ◀ :8000   ┌──────────────────────────┐
+   │  api  (FastAPI)             │           │  MCP Server (host proc)  │ ◀ :8001
+   │  /api/auth/*                │           │  /mcp                    │
+   │  /api/entries/*             │           │  /authorize, /token      │
+   │  /api/analytics/*           │           │  /oauth/login            │
+   │  /api/export/*              │           │  /.well-known/*          │
+   │  /docs                      │           └────────────┬─────────────┘
+   └─────────────┬───────────────┘                        │
+                 │                                        │
+                 └──────────────┬─────────────────────────┘
+                                ▼
+                  ┌─────────────────────────────┐ ◀ :5432
+                  │  db  (PostgreSQL 16)        │
+                  │  users, food_entries        │
+                  └─────────────────────────────┘
 ```
 
-`docker-compose.yml` SPA + API + DB'yi ayağa kaldırır. MCP server şu an Docker dışında çalışıyor (host'ta veya ayrı container'da). Tek deployment'a birleştirmek için `app.py`'a MCP'yi mount etmek gerekir — şu an ayrı tutuldu.
+`docker compose up` üç container'ı kaldırır: **frontend** (Node 20 + Vite dev server, HMR), **api** (FastAPI, sadece JSON), **db** (Postgres). Bu compose stack'i **development içindir** — production static hosting / CDN / TLS terminator burada yok, CI/CD veya cloud provider tarafına bırakılır. MCP server şu an compose dışında — host process veya ayrı kapsayıcı olarak çalıştırılır, MCP client'ları doğrudan bağlanıyor.
 
 ## Auth modeli
 
@@ -93,7 +87,22 @@ Tablolar uygulama boot'ta `Base.metadata.create_all(engine)` ile oluşturulur �
 - **PostgreSQL 16** — DB
 - **mcp 1.27+** — MCP protocol implementation, FastMCP ile
 
-Frontend: vanilla HTML/CSS/JS (build step yok), `static/index.html` tek dosya.
+Frontend: React 18 + Vite 5 + TypeScript, kaynak `frontend/src/` içinde feature klasörlerinde organize:
+
+- `frontend/src/features/{auth,entries,analytics,settings}/` — domain bazlı component'lar
+- `frontend/src/components/` — cross-feature UI (Masthead, ToastHost)
+- `frontend/src/context/AuthContext.tsx` — token + user state, login/register/signOut/rotateToken
+- `frontend/src/hooks/{useEntries,useToast}.ts` — data fetching + global toast queue
+- `frontend/src/lib/{api,storage,format}.ts` — fetch client (Bearer + 401 handling), localStorage, formatting
+- `frontend/src/types/api.ts` — Pydantic schemas'a paralel TypeScript tipleri
+
+State yönetimi minimal: AuthContext (cross-cutting) + useState (UI state) + custom hooks (server state). Redux/Zustand/TanStack Query yok. Navigation modal-based (auth screen ↔ app shell, settings slide-out) — react-router yok.
+
+Vite production build (`cd frontend && npm run build`) `frontend/dist/` dizinine yazar. **frontend container** (multi-stage Dockerfile: Node 20 builder + nginx alpine) bu dist'i image'e bake eder ve `:80`'den serve eder. CSS tek bir global `frontend/src/styles.css` (paper/ink palette, Fraunces + DM Sans + JetBrains Mono).
+
+nginx config (`frontend/nginx.conf`) iki şey yapar:
+- `/api/*` → `http://api:8000` (Docker compose internal DNS, "api" service hostname)
+- Diğer her şey → SPA fallback (`/index.html`), client-side routing eklenirse hazır
 
 ## Güvenlik
 
@@ -115,4 +124,4 @@ Public deployment için minimum:
 - `POSTGRES_PASSWORD` ortam değişkenine alın, hardcode etmeyin
 - Container'lar arasında network izolasyonu
 
-OAuth state'ini ölçekleyebilmek için (multi-replica deployment): `oauth.py`'daki in-memory dict'leri Redis veya Postgres'e taşı.
+OAuth state'ini ölçekleyebilmek için (multi-replica deployment): `mcp_server/oauth.py`'daki in-memory dict'leri Redis veya Postgres'e taşı.

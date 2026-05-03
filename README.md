@@ -19,10 +19,20 @@ Tek gereken: Docker.
 ```bash
 git clone <repo-url> food-tracker
 cd food-tracker
-docker compose up
+docker compose up --build
 ```
 
-Sonra http://localhost:8000 adresini aç, **Create account** ile kayıt ol (şifre min. 8 karakter), yemek eklemeye başla. İlk açılışta Postgres bir-iki saniye init olur, tablolar otomatik yaratılır.
+Üç container kalkar:
+
+| Container | Port | Ne yapar |
+|---|---|---|
+| `frontend` | http://localhost:5173 | Vite dev server (Node 20), HMR aktif, `/api/*`'ı `:8000`'e proxy'ler |
+| `api` | http://localhost:8000 | FastAPI, sadece JSON (`/api/*`, `/docs`) |
+| `db` | :5432 | PostgreSQL 16 |
+
+Tarayıcıda **http://localhost:5173** adresini aç, **Create account** ile kayıt ol (şifre min. 8 karakter), yemek eklemeye başla. İlk açılışta Postgres bir-iki saniye init olur, tablolar otomatik yaratılır.
+
+> **Not:** `frontend` container'ı dev-grade Vite dev server kullanır (HMR + source bind mount). Production deployment (static hosting, CDN, edge cache) bu repo'nun scope'u dışında — CI/CD veya cloud provider tarafına bırakılır (Vercel, Cloudflare Pages, S3 + CloudFront, vb.).
 
 ## Yapay zekaya bağlamak
 
@@ -49,17 +59,29 @@ Her iki kurulumun adım adım anlatımı: **[docs/mcp.md](docs/mcp.md)**
 
 ## Geliştirme
 
-Backend'i Docker olmadan çalıştır:
+`docker compose up` her şeyi kaldırır, ama daha hızlı iterasyon için:
 
+**Backend (Docker'sız):**
 ```bash
-pip install -r requirements.txt
+uv sync                                         # creates .venv, installs from uv.lock
 export DATABASE_URL="postgresql+psycopg://foodtracker:foodtracker@localhost:5432/foodtracker"
-uvicorn app:app --reload
+uv run uvicorn app.main:app --reload
 ```
 
-`docker-compose.yml` `--reload` ile çalışır, kod değişiklikleri anında yansır.
+`pyproject.toml` + `uv.lock` tek kaynak — `requirements.txt` yok. Yeni dependency için: `uv add <paket>`.
 
-**Stack:** FastAPI + SQLAlchemy 2.0 + psycopg + bcrypt + openpyxl, PostgreSQL 16, Vanilla SPA, `mcp>=1.27.0`. Detaylar [docs/architecture.md](docs/architecture.md).
+`docker-compose.yml`'de api service'i `--reload` ile çalışır ve `./app` host'tan mount'lanır — Python kod değişiklikleri anında yansır (frontend container'ını yeniden build etmen gerekmez).
+
+**Frontend (Vite hot-reload, Node 18+):**
+```bash
+cd frontend
+npm install
+npm run dev   # → http://localhost:5173, /api/* requests proxied to :8000
+```
+
+Frontend kod değiştiğinde container'ı yeniden build et: `docker compose up --build frontend`.
+
+**Stack:** FastAPI + SQLAlchemy 2.0 + psycopg + bcrypt + openpyxl, PostgreSQL 16, React + Vite + TypeScript SPA (`frontend/`), nginx (frontend container), `mcp>=1.27.0`. Detaylar [docs/architecture.md](docs/architecture.md).
 
 ## Lisans
 

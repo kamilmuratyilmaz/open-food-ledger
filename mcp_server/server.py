@@ -5,27 +5,41 @@ Food Tracker MCP Server
 Web app'e HTTP üzerinden bağlanır. Kullanıcı SPA'ya kayıt olur, ayarlar
 panelinden API token'ını kopyalar, MCP server'ı bu token ile çalıştırır.
 
-Çalıştır:
+Çalıştır (proje kökünden):
     # stdio (Claude Code / Claude Desktop için, default)
     export FOOD_API_URL="http://localhost:8000"
     export FOOD_API_TOKEN="<settings panelinden kopyalanan token>"
-    python server.py
+    python -m mcp_server.server
 
     # streamable HTTP (ChatGPT ve uzak client'lar için)
-    MCP_TRANSPORT=http MCP_PORT=8001 python server.py
+    MCP_TRANSPORT=http MCP_PORT=8001 python -m mcp_server.server
     # → http://localhost:8001/mcp adresinde dinler
+
+`python mcp_server/server.py` direct invocation'ı da çalışır (aşağıdaki
+sys.path hack'i sayesinde) — `python -m` formatı kanonik olanıdır.
 """
 
 from __future__ import annotations
 
-import json
-import os
-import urllib.parse
-import urllib.request
-import urllib.error
-from typing import Any, Optional
+# Allow both `python -m mcp_server.server` (canonical, sys.path[0] = cwd
+# = project root) and `python mcp_server/server.py` (sys.path[0] = mcp_server/).
+# In the second case the parent dir isn't on sys.path, so the absolute import
+# `from mcp_server.oauth import ...` below would fail. Inject parent here.
+import sys
+from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+_PROJ_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJ_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJ_ROOT))
+
+import json  # noqa: E402
+import os  # noqa: E402
+import urllib.parse  # noqa: E402
+import urllib.request  # noqa: E402
+import urllib.error  # noqa: E402
+from typing import Any, Optional  # noqa: E402
+
+from mcp.server.fastmcp import FastMCP  # noqa: E402
 
 API_URL = os.environ.get("FOOD_API_URL", "http://localhost:8000").rstrip("/")
 API_TOKEN = os.environ.get("FOOD_API_TOKEN")
@@ -44,7 +58,7 @@ if TRANSPORT == "stdio" and not API_TOKEN:
 
 if OAUTH_ENABLED:
     from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
-    from oauth import FoodTrackerOAuthProvider
+    from mcp_server.oauth import FoodTrackerOAuthProvider
 
     _oauth_provider = FoodTrackerOAuthProvider(api_url=API_URL, public_url=PUBLIC_URL)
     mcp = FastMCP(

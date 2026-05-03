@@ -26,8 +26,26 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      # Hot-reload Python changes from host
+      - ./app:/app/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - api
+    environment:
+      # Inside compose, /api requests must reach the api container, not localhost.
+      VITE_API_PROXY_TARGET: http://api:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      # Bind-mount source for HMR; anonymous volume preserves the image's
+      # node_modules (otherwise the bind would shadow it with host's empty dir
+      # if the host hasn't run `npm install`).
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
   pgdata:

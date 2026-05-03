@@ -71,7 +71,7 @@ Sonuç:
 
 ## State storage
 
-OAuth provider (`oauth.py`) bellekteki dict'lerde tutar:
+OAuth provider (`mcp_server/oauth.py`) bellekteki dict'lerde tutar:
 
 | Saklanır mı? | Neden |
 |---|---|

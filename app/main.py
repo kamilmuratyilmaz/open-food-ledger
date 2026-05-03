@@ -1,11 +1,15 @@
-"""FastAPI app assembly: lifespan, middleware, routers, static SPA mount."""
+"""FastAPI app assembly: lifespan, middleware, routers.
+
+Frontend is served by a separate nginx container (see frontend/), which
+proxies /api/* here. CORS allow_origins covers cross-container calls
+when the frontend container hits this API directly during dev.
+"""
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from app.analytics.routes import router as analytics_router
 from app.auth.routes import router as auth_router
@@ -36,6 +40,3 @@ app.include_router(auth_router)
 app.include_router(entries_router)
 app.include_router(analytics_router)
 app.include_router(export_router)
-
-# SPA, kökten serve edilsin (Vite build çıktısı static/'e düşer).
-app.mount("/", StaticFiles(directory="static", html=True), name="static")

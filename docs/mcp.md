@@ -43,7 +43,8 @@ Yapay zeka asistanlarının yemek günlüğüne yazıp okuyabilmesi için MCP se
      "mcpServers": {
        "food-tracker": {
          "command": "/absolute/path/to/python",
-         "args": ["/absolute/path/to/server.py"],
+         "args": ["-m", "mcp_server.server"],
+         "cwd": "/absolute/path/to/food-tracker",
          "env": {
            "FOOD_API_URL": "http://localhost:8000",
            "FOOD_API_TOKEN": "<SPA'dan kopyaladığın token>"
@@ -51,6 +52,11 @@ Yapay zeka asistanlarının yemek günlüğüne yazıp okuyabilmesi için MCP se
        }
      }
    }
+   ```
+
+   `cwd` field'ı `python -m mcp_server.server`'ın `mcp_server` paketini bulması için gerekli. Client'ın `cwd` field'ını desteklemiyorsa direkt path versiyonu da çalışır (server.py'da sys.path injection var):
+   ```json
+   "args": ["/absolute/path/to/food-tracker/mcp_server/server.py"]
    ```
 
 4. Client'ı yeniden başlat. Tool'lar listede görünecek.
@@ -72,7 +78,7 @@ export MCP_TRANSPORT=http
 export MCP_PORT=8001                              # opsiyonel, default 8001
 export MCP_PUBLIC_URL=https://your-domain.example  # gerekli, OAuth metadata için
 export FOOD_API_URL=http://localhost:8000          # API'nin nerede çalıştığı
-python server.py
+python -m mcp_server.server                        # proje kökünden
 ```
 
 Endpoint: `https://your-domain.example/mcp`

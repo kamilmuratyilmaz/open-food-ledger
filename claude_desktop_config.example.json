@@ -2,7 +2,8 @@
   "mcpServers": {
     "food-tracker": {
       "command": "/absolute/path/to/python",
-      "args": ["/absolute/path/to/food-tracker/mcp_server/server.py"],
+      "args": ["-m", "mcp_server.server"],
+      "cwd": "/absolute/path/to/food-tracker",
       "env": {
         "FOOD_API_URL": "http://localhost:8000",
         "FOOD_API_TOKEN": "settings panelinden kopyaladığın token"
