@@ -3,6 +3,8 @@ name = "open-food-ledger"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.18.4",
