@@ -1,5 +1,7 @@
 # Open Food Ledger
 
+> Documentation: [English](docs/en/) · [Türkçe](docs/tr/)
+
 Kişisel kalori, makro ve gramaj günlüğü. Tarayıcıdan veya yapay zeka asistanından yemek kaydı tut, gün/hafta toplamlarını gör, hedeflerine olan ilerlemeyi izle.
 
 ## Bu ne işe yarar?
@@ -41,7 +43,7 @@ Tarayıcıda **http://localhost:5173** adresini aç, **Create account** ile kay�
 - **Claude Desktop / Claude Code** — yerel makinende, stdio transport ile
 - **ChatGPT, Claude.ai connector** veya başka bir uzak client — HTTPS + OAuth ile
 
-Her iki kurulumun adım adım anlatımı: **[docs/mcp.md](docs/mcp.md)**
+Her iki kurulumun adım adım anlatımı: **[docs/tr/mcp.md](docs/tr/mcp.md)** ([English](docs/en/mcp.md))
 
 Örnek istemler bağlandıktan sonra:
 > *"Bugün ne yedim, kaç kalori aldım?"*
@@ -50,13 +52,13 @@ Her iki kurulumun adım adım anlatımı: **[docs/mcp.md](docs/mcp.md)**
 
 ## Daha fazla bilgi
 
-| Belge | İçerik |
-|---|---|
-| [docs/mcp.md](docs/mcp.md) | MCP server kurulumu (stdio ve HTTP), tool listesi, örnek konfigler |
-| [docs/api.md](docs/api.md) | REST API endpoint referansı |
-| [docs/oauth.md](docs/oauth.md) | OAuth 2.0 akışı, `.well-known` endpoint'leri, PKCE detayı |
-| [docs/architecture.md](docs/architecture.md) | Mimari diyagramı, veri şeması, auth modeli, güvenlik notları |
-| [docs/deployment.md](docs/deployment.md) | Production deployment guide — HTTPS, secrets, migrations, rate limiting, observability |
+| Belge | TR | EN |
+|---|---|---|
+| MCP server kurulumu (stdio ve HTTP), tool listesi, örnek konfigler | [tr/mcp.md](docs/tr/mcp.md) | [en/mcp.md](docs/en/mcp.md) |
+| REST API endpoint referansı | [tr/api.md](docs/tr/api.md) | [en/api.md](docs/en/api.md) |
+| OAuth 2.0 akışı, `.well-known` endpoint'leri, PKCE detayı | [tr/oauth.md](docs/tr/oauth.md) | [en/oauth.md](docs/en/oauth.md) |
+| Mimari diyagramı, veri şeması, auth modeli, güvenlik notları | [tr/architecture.md](docs/tr/architecture.md) | [en/architecture.md](docs/en/architecture.md) |
+| Production deployment guide — HTTPS, secrets, migrations, rate limiting, observability | [tr/deployment.md](docs/tr/deployment.md) | [en/deployment.md](docs/en/deployment.md) |
 
 ## Geliştirme
 
@@ -82,7 +84,7 @@ npm run dev   # → http://localhost:5173, /api/* requests proxied to :8000
 
 Frontend kod değiştiğinde container'ı yeniden build et: `docker compose up --build frontend`.
 
-**Stack:** FastAPI + SQLAlchemy 2.0 + psycopg + bcrypt + openpyxl, PostgreSQL 16, React + Vite + TypeScript SPA (`frontend/`), nginx (frontend container), `mcp>=1.27.0`. Detaylar [docs/architecture.md](docs/architecture.md).
+**Stack:** FastAPI + SQLAlchemy 2.0 + psycopg + bcrypt + openpyxl, PostgreSQL 16, React + Vite + TypeScript SPA (`frontend/`), `mcp>=1.27.0`. Detaylar [docs/tr/architecture.md](docs/tr/architecture.md).
 
 ## Lisans
 
