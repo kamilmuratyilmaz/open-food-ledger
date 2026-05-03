@@ -1,22 +1,23 @@
 # Open Food Ledger
 
+> Languages: **English** · [Türkçe](README.tr.md)
 > Documentation: [English](docs/en/) · [Türkçe](docs/tr/)
 
-Kişisel kalori, makro ve gramaj günlüğü. Tarayıcıdan veya yapay zeka asistanından yemek kaydı tut, gün/hafta toplamlarını gör, hedeflerine olan ilerlemeyi izle.
+A personal calorie, macro, and gram-weight food journal. Log meals from your browser or through an AI assistant, see daily/weekly totals, and track progress toward your goals.
 
-## Bu ne işe yarar?
+## What does it do?
 
-Yediklerini kayda almanın üç yolu var:
+Three ways to log what you eat:
 
-- **Tarayıcıdan** — basit bir SPA: hesap aç, yemek ekle, gününü gör
-- **Yapay zekadan** — Claude veya ChatGPT'ye doğal dilde yaz: *"80g yulaf, kahvaltı, 320 kalori"* — yapay zeka kendisi kaydeder, sorgular, analiz eder
-- **Excel'e aktararak** — kendi raporunu yap, başka uygulamalarla entegre et
+- **From the browser** — a simple SPA: create an account, add a meal, see your day
+- **From an AI** — write to Claude or ChatGPT in natural language: *"80g oats, breakfast, 320 calories"* — the AI logs, queries, and analyzes for you
+- **Export to Excel** — build your own reports, integrate with other apps
 
-Veri tamamen senin Postgres'inde, kontrol sende.
+Your data lives in your own Postgres. You stay in control.
 
-## Hızlı başlangıç
+## Quick start
 
-Tek gereken: Docker.
+All you need: Docker.
 
 ```bash
 git clone <repo-url> open-food-ledger
@@ -24,61 +25,61 @@ cd open-food-ledger
 docker compose -f compose.dev.yml up --build
 ```
 
-Production benzeri stack için (frontend yok, source baked, no reload):
+For a production-like stack (no frontend, source baked in, no reload):
 ```bash
 docker compose -f compose.prod.yml up --build -d
 ```
 
-Dev stack'inde dört container kalkar:
+The dev stack brings up four containers:
 
-| Container | Port | Ne yapar |
+| Container | Port | What it does |
 |---|---|---|
-| `frontend` | http://localhost:5173 | Vite dev server (Node 20), HMR aktif, `/api/*`'ı `:8000`'e proxy'ler |
-| `api` | http://localhost:8000 | FastAPI, sadece JSON (`/api/*`, `/docs`) |
+| `frontend` | http://localhost:5173 | Vite dev server (Node 20), HMR enabled, proxies `/api/*` to `:8000` |
+| `api` | http://localhost:8000 | FastAPI, JSON-only (`/api/*`, `/docs`) |
 | `db` | :5432 | PostgreSQL 16 |
 
-Tarayıcıda **http://localhost:5173** adresini aç, **Create account** ile kayıt ol (şifre min. 8 karakter), yemek eklemeye başla. İlk açılışta Postgres bir-iki saniye init olur, tablolar otomatik yaratılır.
+Open **http://localhost:5173** in your browser, click **Create account** (password min. 8 characters), and start logging meals. On first launch Postgres takes a second or two to initialize and the tables are created automatically.
 
-> **Not:** `frontend` container'ı dev-grade Vite dev server kullanır (HMR + source bind mount). `compose.prod.yml`'de frontend service'i **yok** — production deployment (static hosting, CDN, edge cache) CI/CD veya cloud provider tarafına bırakılır (Vercel, Cloudflare Pages, S3 + CloudFront, vb.).
+> **Note:** the `frontend` container uses a dev-grade Vite dev server (HMR + source bind mount). `compose.prod.yml` does **not** include the frontend service — production deployment (static hosting, CDN, edge cache) is left to your CI/CD or cloud provider (Vercel, Cloudflare Pages, S3 + CloudFront, etc.).
 
-## Yapay zekaya bağlamak
+## Connecting to an AI
 
-İki yol:
+Two paths:
 
-- **Claude Desktop / Claude Code** — yerel makinende, stdio transport ile
-- **ChatGPT, Claude.ai connector** veya başka bir uzak client — HTTPS + OAuth ile
+- **Claude Desktop / Claude Code** — local machine, stdio transport
+- **ChatGPT, Claude.ai connectors**, or any other remote client — HTTPS + OAuth
 
-Her iki kurulumun adım adım anlatımı: **[docs/tr/mcp.md](docs/tr/mcp.md)** ([English](docs/en/mcp.md))
+Step-by-step setup for both: **[docs/en/mcp.md](docs/en/mcp.md)** ([Türkçe](docs/tr/mcp.md))
 
-Örnek istemler bağlandıktan sonra:
-> *"Bugün ne yedim, kaç kalori aldım?"*
-> *"80g yulaf ezmesi, 320 kalori, 10g protein olarak kahvaltı ekle"*
-> *"Son hafta makro dağılımım nasıl, 2200 kalori 140g protein hedefime adherence'ım ne?"*
+Example prompts once connected:
+> *"What did I eat today and how many calories did I have?"*
+> *"Add 80g oatmeal, 320 calories, 10g protein as breakfast"*
+> *"How does my macro split look this past week, and how am I tracking against my 2200-calorie / 140g-protein goal?"*
 
-## Daha fazla bilgi
+## More information
 
-| Belge | TR | EN |
+| Document | EN | TR |
 |---|---|---|
-| MCP server kurulumu (stdio ve HTTP), tool listesi, örnek konfigler | [tr/mcp.md](docs/tr/mcp.md) | [en/mcp.md](docs/en/mcp.md) |
-| REST API endpoint referansı | [tr/api.md](docs/tr/api.md) | [en/api.md](docs/en/api.md) |
-| OAuth 2.0 akışı, `.well-known` endpoint'leri, PKCE detayı | [tr/oauth.md](docs/tr/oauth.md) | [en/oauth.md](docs/en/oauth.md) |
-| Mimari diyagramı, veri şeması, auth modeli, güvenlik notları | [tr/architecture.md](docs/tr/architecture.md) | [en/architecture.md](docs/en/architecture.md) |
-| Production deployment guide — HTTPS, secrets, migrations, rate limiting, observability | [tr/deployment.md](docs/tr/deployment.md) | [en/deployment.md](docs/en/deployment.md) |
+| MCP server setup (stdio and HTTP), tool list, example configs | [en/mcp.md](docs/en/mcp.md) | [tr/mcp.md](docs/tr/mcp.md) |
+| REST API endpoint reference | [en/api.md](docs/en/api.md) | [tr/api.md](docs/tr/api.md) |
+| OAuth 2.0 flow, `.well-known` endpoints, PKCE details | [en/oauth.md](docs/en/oauth.md) | [tr/oauth.md](docs/tr/oauth.md) |
+| Architecture diagram, data schema, auth model, security notes | [en/architecture.md](docs/en/architecture.md) | [tr/architecture.md](docs/tr/architecture.md) |
+| Production deployment guide — HTTPS, secrets, migrations, rate limiting, observability | [en/deployment.md](docs/en/deployment.md) | [tr/deployment.md](docs/tr/deployment.md) |
 
-## Geliştirme
+## Development
 
-`docker compose up` her şeyi kaldırır, ama daha hızlı iterasyon için:
+`docker compose up` brings everything up, but for faster iteration:
 
-**Backend (Docker'sız):**
+**Backend (without Docker):**
 ```bash
 uv sync                                         # creates .venv, installs from uv.lock
 export DATABASE_URL="postgresql+psycopg://openfoodledger:openfoodledger@localhost:5432/openfoodledger"
 uv run uvicorn app.main:app --reload
 ```
 
-`pyproject.toml` + `uv.lock` tek kaynak — `requirements.txt` yok. Yeni dependency için: `uv add <paket>`.
+`pyproject.toml` + `uv.lock` is the single source of truth — there is no `requirements.txt`. To add a new dependency: `uv add <package>`.
 
-`compose.dev.yml`'de api service'i `target: dev` build target'ı ile çalışır (Dockerfile'da `--reload` baked) ve `./app` host'tan mount'lanır — Python kod değişiklikleri anında yansır. `compose.prod.yml` ise `target: prod` kullanır: source baked, bind mount yok, reload yok.
+In `compose.dev.yml` the api service runs with build `target: dev` (with `--reload` baked into the Dockerfile) and `./app` is mounted from the host — Python code changes are picked up instantly. `compose.prod.yml` uses `target: prod`: source is baked in, no bind mount, no reload.
 
 **Frontend (Vite hot-reload, Node 18+):**
 ```bash
@@ -87,10 +88,10 @@ npm install
 npm run dev   # → http://localhost:5173, /api/* requests proxied to :8000
 ```
 
-Frontend kod değiştiğinde container'ı yeniden build et: `docker compose up --build frontend`.
+When frontend code changes, rebuild the container: `docker compose up --build frontend`.
 
-**Stack:** FastAPI + SQLAlchemy 2.0 + psycopg + bcrypt + openpyxl, PostgreSQL 16, React + Vite + TypeScript SPA (`frontend/`), `mcp>=1.27.0`. Detaylar [docs/tr/architecture.md](docs/tr/architecture.md).
+**Stack:** FastAPI + SQLAlchemy 2.0 + psycopg + bcrypt + openpyxl, PostgreSQL 16, React + Vite + TypeScript SPA (`frontend/`), `mcp>=1.27.0`. Details in [docs/en/architecture.md](docs/en/architecture.md).
 
-## Lisans
+## License
 
-MIT (veya kendi tercihin).
+MIT (or your choice).
