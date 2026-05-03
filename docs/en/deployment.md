@@ -87,6 +87,29 @@ A food log is potentially health-related data. Add privacy policy + TOS pages to
 
 `mcp_server/oauth.py` keeps `_clients` and `_codes` in memory. That's fine on a single replica (clients re-register after a restart; the user just sees one extra login). If you scale to multiple replicas, move that state to a shared store (a Postgres table or an in-memory cache service).
 
+## 13. Deploy MCP on its own host (optional)
+
+If you want MCP to scale independently of the API, or live behind a different domain (e.g. `mcp.example.com`), you can run it standalone. The image is independent (`mcp_server/Dockerfile`), and it talks to the API over plain HTTP.
+
+```bash
+# Build (from the project root)
+docker build -f mcp_server/Dockerfile -t openfoodledger-mcp:v1 .
+
+# Run with the .env.prod env file (FOOD_API_URL points at the public API)
+docker run --rm -d --name mcp \
+    --env-file .env.prod \
+    -p 8001:8001 \
+    --cap-drop ALL \
+    --security-opt no-new-privileges:true \
+    --read-only --tmpfs /tmp \
+    openfoodledger-mcp:v1
+```
+
+`.env.prod` on this host needs:
+- `FOOD_API_URL=https://api.example.com` (the API's public URL)
+- `MCP_PUBLIC_URL=https://mcp.example.com` (this host's public URL)
+- The other keys (POSTGRES_*, DATABASE_URL, ALLOWED_ORIGINS) are unused by MCP — leave them out or ignore them.
+
 ---
 
 ## Suggested order

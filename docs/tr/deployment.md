@@ -87,6 +87,29 @@ Yemek günlüğü potansiyel sağlık verisi. SPA'ya privacy policy + TOS sayfas
 
 `mcp_server/oauth.py`'da `_clients` ve `_codes` in-memory. Tek replica çalışıyorsan kabul edilebilir (restart'ta client'lar re-register olur, kullanıcı bir login akışı daha görür). Multi-replica deployment'a geçeceksen state'i ortak bir store'a (Postgres tablosu veya in-memory cache servisi) taşı.
 
+## 13. MCP'yi ayrı host'ta deploy et (opsiyonel)
+
+API'den bağımsız ölçeklemek veya farklı domain (örn. `mcp.example.com`) arkasına almak istersen MCP'yi tek başına çalıştırabilirsin. Image bağımsız (`mcp_server/Dockerfile`), API'ye sadece HTTP üzerinden konuşuyor.
+
+```bash
+# Build (proje kökünden)
+docker build -f mcp_server/Dockerfile -t openfoodledger-mcp:v1 .
+
+# Run, .env.prod env file ile (FOOD_API_URL public API URL'ini göstersin)
+docker run --rm -d --name mcp \
+    --env-file .env.prod \
+    -p 8001:8001 \
+    --cap-drop ALL \
+    --security-opt no-new-privileges:true \
+    --read-only --tmpfs /tmp \
+    openfoodledger-mcp:v1
+```
+
+Bu host'taki `.env.prod`'da:
+- `FOOD_API_URL=https://api.example.com` (API'nin public URL'i)
+- `MCP_PUBLIC_URL=https://mcp.example.com` (bu host'un public URL'i)
+- Diğer key'ler (POSTGRES_*, DATABASE_URL, ALLOWED_ORIGINS) MCP için gerekmiyor — kalabilir veya çıkarılabilir.
+
 ---
 
 ## Minimum sıra

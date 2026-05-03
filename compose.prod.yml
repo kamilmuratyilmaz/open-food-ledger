@@ -44,6 +44,10 @@ services:
     # No volumes: source, alembic.ini and migrations are baked into the image.
     # No command override: uses the prod stage's CMD (no --reload).
 
+  # MCP is also deployable on its own — see docs/*/deployment.md for the
+  # standalone `docker run` recipe. Co-deployed here, set
+  # FOOD_API_URL=http://api:8000 in .env.prod (compose internal DNS); on
+  # a separate host set it to the API's public URL.
   mcp:
     build:
       context: .
@@ -51,10 +55,6 @@ services:
     env_file: .env.prod
     depends_on:
       - api
-    environment:
-      # FOOD_API_URL is internal compose DNS — never changes between deploys,
-      # so it lives here rather than in .env.prod.
-      FOOD_API_URL: http://api:8000
     ports:
       - "8001:8001"
     cap_drop: [ALL]
