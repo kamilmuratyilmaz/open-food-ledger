@@ -1,4 +1,4 @@
-# Food Tracker
+# Open Food Ledger
 
 Kişisel kalori, makro ve gramaj günlüğü. Tarayıcıdan veya yapay zeka asistanından yemek kaydı tut, gün/hafta toplamlarını gör, hedeflerine olan ilerlemeyi izle.
 
@@ -17,8 +17,8 @@ Veri tamamen senin Postgres'inde, kontrol sende.
 Tek gereken: Docker.
 
 ```bash
-git clone <repo-url> food-tracker
-cd food-tracker
+git clone <repo-url> open-food-ledger
+cd open-food-ledger
 docker compose up --build
 ```
 
@@ -56,6 +56,7 @@ Her iki kurulumun adım adım anlatımı: **[docs/mcp.md](docs/mcp.md)**
 | [docs/api.md](docs/api.md) | REST API endpoint referansı |
 | [docs/oauth.md](docs/oauth.md) | OAuth 2.0 akışı, `.well-known` endpoint'leri, PKCE detayı |
 | [docs/architecture.md](docs/architecture.md) | Mimari diyagramı, veri şeması, auth modeli, güvenlik notları |
+| [docs/deployment.md](docs/deployment.md) | Production deployment guide — HTTPS, secrets, migrations, rate limiting, observability |
 
 ## Geliştirme
 
@@ -64,7 +65,7 @@ Her iki kurulumun adım adım anlatımı: **[docs/mcp.md](docs/mcp.md)**
 **Backend (Docker'sız):**
 ```bash
 uv sync                                         # creates .venv, installs from uv.lock
-export DATABASE_URL="postgresql+psycopg://foodtracker:foodtracker@localhost:5432/foodtracker"
+export DATABASE_URL="postgresql+psycopg://openfoodledger:openfoodledger@localhost:5432/openfoodledger"
 uv run uvicorn app.main:app --reload
 ```
 

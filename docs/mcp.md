@@ -41,10 +41,10 @@ Yapay zeka asistanlarının yemek günlüğüne yazıp okuyabilmesi için MCP se
    ```json
    {
      "mcpServers": {
-       "food-tracker": {
+       "open-food-ledger": {
          "command": "/absolute/path/to/python",
          "args": ["-m", "mcp_server.server"],
-         "cwd": "/absolute/path/to/food-tracker",
+         "cwd": "/absolute/path/to/open-food-ledger",
          "env": {
            "FOOD_API_URL": "http://localhost:8000",
            "FOOD_API_TOKEN": "<SPA'dan kopyaladığın token>"
@@ -56,7 +56,7 @@ Yapay zeka asistanlarının yemek günlüğüne yazıp okuyabilmesi için MCP se
 
    `cwd` field'ı `python -m mcp_server.server`'ın `mcp_server` paketini bulması için gerekli. Client'ın `cwd` field'ını desteklemiyorsa direkt path versiyonu da çalışır (server.py'da sys.path injection var):
    ```json
-   "args": ["/absolute/path/to/food-tracker/mcp_server/server.py"]
+   "args": ["/absolute/path/to/open-food-ledger/mcp_server/server.py"]
    ```
 
 4. Client'ı yeniden başlat. Tool'lar listede görünecek.

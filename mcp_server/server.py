@@ -1,6 +1,6 @@
 """
-Food Tracker MCP Server
-=======================
+Open Food Ledger MCP Server
+===========================
 
 Web app'e HTTP üzerinden bağlanır. Kullanıcı SPA'ya kayıt olur, ayarlar
 panelinden API token'ını kopyalar, MCP server'ı bu token ile çalıştırır.
@@ -58,11 +58,11 @@ if TRANSPORT == "stdio" and not API_TOKEN:
 
 if OAUTH_ENABLED:
     from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
-    from mcp_server.oauth import FoodTrackerOAuthProvider
+    from mcp_server.oauth import OpenFoodLedgerOAuthProvider
 
-    _oauth_provider = FoodTrackerOAuthProvider(api_url=API_URL, public_url=PUBLIC_URL)
+    _oauth_provider = OpenFoodLedgerOAuthProvider(api_url=API_URL, public_url=PUBLIC_URL)
     mcp = FastMCP(
-        "food-tracker",
+        "open-food-ledger",
         host="0.0.0.0",
         port=HTTP_PORT,
         auth_server_provider=_oauth_provider,
@@ -75,10 +75,10 @@ if OAUTH_ENABLED:
     )
 elif TRANSPORT == "http":
     _oauth_provider = None
-    mcp = FastMCP("food-tracker", host="0.0.0.0", port=HTTP_PORT)
+    mcp = FastMCP("open-food-ledger", host="0.0.0.0", port=HTTP_PORT)
 else:
     _oauth_provider = None
-    mcp = FastMCP("food-tracker")
+    mcp = FastMCP("open-food-ledger")
 
 
 if OAUTH_ENABLED:
@@ -89,7 +89,7 @@ if OAUTH_ENABLED:
     def _render_login(sid: str, error: str | None = None) -> HTMLResponse:
         err_html = f'<p class="err">{_html_escape(error)}</p>' if error else ""
         body = f"""<!doctype html>
-<html><head><meta charset="utf-8"><title>Food Tracker — Sign in</title>
+<html><head><meta charset="utf-8"><title>Open Food Ledger — Sign in</title>
 <style>
   body {{ font-family: system-ui, sans-serif; background:#0e0e10; color:#eee;
          display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0 }}
@@ -105,7 +105,7 @@ if OAUTH_ENABLED:
   .err {{ color:#ff7070; font-size:13px; margin:0 0 -4px }}
 </style></head>
 <body><form method="POST" action="/oauth/login">
-  <h1>Food Tracker</h1>
+  <h1>Open Food Ledger</h1>
   <p class="sub">Sign in to authorize the connector</p>
   {err_html}
   <input type="hidden" name="sid" value="{_html_escape(sid)}" />

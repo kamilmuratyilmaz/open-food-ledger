@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: foodtracker
-      POSTGRES_PASSWORD: foodtracker
-      POSTGRES_DB: foodtracker
+      POSTGRES_USER: openfoodledger
+      POSTGRES_PASSWORD: openfoodledger
+      POSTGRES_DB: openfoodledger
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U foodtracker"]
+      test: ["CMD-SHELL", "pg_isready -U openfoodledger"]
       interval: 3s
       timeout: 3s
       retries: 10
@@ -21,7 +21,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg://foodtracker:foodtracker@db:5432/foodtracker
+      DATABASE_URL: postgresql+psycopg://openfoodledger:openfoodledger@db:5432/openfoodledger
       ALLOWED_ORIGINS: "*"
     ports:
       - "8000:8000"

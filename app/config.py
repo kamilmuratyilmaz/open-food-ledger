@@ -5,7 +5,7 @@ import os
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
-    "postgresql+psycopg://foodtracker:foodtracker@localhost:5432/foodtracker",
+    "postgresql+psycopg://openfoodledger:openfoodledger@localhost:5432/openfoodledger",
 )
 ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
 MEAL_TYPES: frozenset[str] = frozenset({"breakfast", "lunch", "dinner", "snack"})

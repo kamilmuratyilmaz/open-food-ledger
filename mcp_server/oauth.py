@@ -1,5 +1,5 @@
 """
-Food Tracker OAuth 2.0 provider for the MCP server.
+Open Food Ledger OAuth 2.0 provider for the MCP server.
 
 In-memory storage (clients, sessions, auth codes, token cache). Restart
 wipes everything; Claude.ai will re-do dynamic client registration on
@@ -48,7 +48,7 @@ class LoginSession:
     expires_at: float
 
 
-class FoodTrackerOAuthProvider(
+class OpenFoodLedgerOAuthProvider(
     OAuthAuthorizationServerProvider[AuthorizationCode, RefreshToken, AccessToken]
 ):
     """OAuth provider that delegates user auth to the FastAPI app."""

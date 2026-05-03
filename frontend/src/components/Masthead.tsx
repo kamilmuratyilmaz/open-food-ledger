@@ -10,7 +10,7 @@ export function Masthead({ onOpenSettings }: Props) {
   return (
     <header className="mast">
       <div className="mast-title display">
-        Ledger<em>,</em>
+        Open Food Ledger<em>,</em>
         <br />a food log.
       </div>
       <div className="mast-meta">

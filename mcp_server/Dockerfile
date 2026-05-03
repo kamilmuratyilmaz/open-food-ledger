@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# MCP server image for the Food Tracker.
+# MCP server image for Open Food Ledger.
 # Build context is the PROJECT ROOT (not mcp_server/) so that pyproject.toml
 # and uv.lock are accessible. Build with:
 #     docker build -f mcp_server/Dockerfile -t food-mcp .
