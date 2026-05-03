@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Ledger — yemek günlüğü</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper: #f5f0e3;
+    --paper-2: #efe8d6;
+    --ink: #1a1410;
+    --ink-2: #4a3f33;
+    --ink-3: #8b7d6a;
+    --line: #ddd1b6;
+    --line-2: #c8b896;
+    --accent: #b54e1f;
+    --accent-2: #e8927a;
+    --good: #4a6b3a;
+    --warn: #b87333;
+    --danger: #9a3a2a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "DM Sans", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(181, 78, 31, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(74, 107, 58, 0.04) 0%, transparent 40%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' /><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0 0.05  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' /></svg>");
+    background-attachment: fixed;
+  }
+  .num { font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; }
+  .display {
+    font-family: "Fraunces", serif;
+    font-optical-sizing: auto;
+    font-variation-settings: "opsz" 96, "SOFT" 50;
+    letter-spacing: -0.02em;
+  }
+
+  .shell { max-width: 1180px; margin: 0 auto; padding: 32px 28px 80px; }
+  @media (max-width: 640px) { .shell { padding: 20px 18px 60px; } }
+
+  /* ============ Masthead ============ */
+  header.mast {
+    border-top: 3px double var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: 10px 0 16px;
+    margin-bottom: 28px;
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 20px; flex-wrap: wrap;
+  }
+  .mast-title {
+    font-family: "Fraunces", serif;
+    font-weight: 800;
+    font-size: clamp(36px, 7vw, 64px);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+  }
+  .mast-title em { font-style: italic; font-weight: 400; color: var(--accent); }
+  .mast-meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--ink-3); text-align: right;
+  }
+  .mast-meta b { color: var(--ink); font-weight: 500; }
+  .mast-meta a {
+    color: var(--ink-3); text-decoration: none;
+    border-bottom: 1px dotted var(--ink-3); cursor: pointer;
+  }
+  .mast-meta a:hover { color: var(--accent); border-color: var(--accent); }
+  .mast-meta .sep { margin: 0 8px; color: var(--line-2); }
+
+  /* ============ Auth (login/register) ============ */
+  .auth-wrap {
+    max-width: 460px; margin: 80px auto;
+  }
+  .auth-card {
+    border: 1px solid var(--line); background: var(--paper-2);
+    padding: 36px 32px;
+    position: relative;
+  }
+  .auth-card::before {
+    content: "";
+    position: absolute; inset: -1px;
+    border-top: 3px double var(--ink);
+    pointer-events: none;
+  }
+  .auth-card h1 {
+    font-family: "Fraunces", serif;
+    font-weight: 800;
+    font-size: 56px;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    margin-bottom: 8px;
+    font-variation-settings: "opsz" 144;
+  }
+  .auth-card h1 em { font-style: italic; font-weight: 400; color: var(--accent); }
+  .auth-card .sub {
+    font-family: "Fraunces", serif; font-style: italic; font-size: 18px;
+    color: var(--ink-2); margin-bottom: 28px;
+  }
+  .auth-tabs {
+    display: flex; border-bottom: 1px solid var(--line);
+    margin-bottom: 22px;
+  }
+  .auth-tab {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em;
+    padding: 10px 0; margin-right: 24px;
+    color: var(--ink-3); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .auth-tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+  .auth-tab:hover { color: var(--ink); }
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-3);
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%; padding: 10px 12px;
+    font-family: "DM Sans", sans-serif; font-size: 15px;
+    background: var(--paper); border: 1px solid var(--line-2); color: var(--ink);
+    border-radius: 0;
+  }
+  .field input:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  /* ============ Buttons ============ */
+  button, .btn {
+    font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 500;
+    border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+    padding: 10px 18px; cursor: pointer; transition: all 0.15s ease;
+    letter-spacing: 0.01em;
+  }
+  button:hover, .btn:hover { background: var(--accent); border-color: var(--accent); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--ink); border-color: var(--ink); }
+  button.ghost:hover { background: var(--ink); color: var(--paper); }
+  button.tiny {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    padding: 4px 10px; background: transparent; border: 1px solid var(--line-2);
+    color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  button.tiny:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  button.danger.tiny:hover { background: var(--danger); border-color: var(--danger); color: var(--paper); }
+  button.full { width: 100%; padding: 12px; }
+
+  /* ============ Layout ============ */
+  .grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 36px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; gap: 28px; } }
+
+  section h2.sec {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-3);
+    border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  section h2.sec .pill {
+    background: var(--ink); color: var(--paper); padding: 2px 8px;
+    font-size: 10px; letter-spacing: 0.08em;
+  }
+
+  /* ============ Form ============ */
+  form.entry { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  form.entry .full { grid-column: 1 / -1; }
+  form.entry label {
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-3);
+    display: block; margin-bottom: 5px;
+  }
+  form.entry input, form.entry select, form.entry textarea {
+    font-family: "DM Sans", sans-serif; font-size: 14px;
+    background: transparent; border: none; border-bottom: 1px solid var(--line-2);
+    padding: 6px 0 8px; width: 100%; color: var(--ink); border-radius: 0;
+  }
+  form.entry input.num, form.entry select { font-family: "JetBrains Mono", monospace; }
+  form.entry input:focus, form.entry select:focus, form.entry textarea:focus {
+    outline: none; border-bottom-color: var(--accent);
+  }
+  form.entry textarea { resize: vertical; min-height: 38px; }
+  form.entry .submit-row {
+    grid-column: 1 / -1; display: flex; justify-content: flex-end;
+    gap: 10px; margin-top: 8px;
+  }
+  .micros-toggle {
+    grid-column: 1 / -1;
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-3);
+    cursor: pointer; margin-top: 4px; user-select: none;
+  }
+  .micros-toggle:hover { color: var(--accent); }
+  .micros-fields { display: contents; }
+  .micros-fields.hidden { display: none; }
+
+  /* ============ Totals ============ */
+  .totals {
+    border: 1px solid var(--line); padding: 18px 20px; margin-bottom: 22px;
+    background: linear-gradient(180deg, var(--paper-2) 0%, var(--paper) 100%);
+  }
+  .totals-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 14px;
+  }
+  .totals-head .date {
+    font-family: "Fraunces", serif; font-style: italic; font-size: 22px; font-weight: 500;
+  }
+  .totals-head .count {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.12em;
+  }
+  .totals-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 480px) { .totals-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat .k {
+    font-family: "JetBrains Mono", monospace; font-size: 9px;
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-3);
+    margin-bottom: 2px;
+  }
+  .stat .v {
+    font-family: "Fraunces", serif; font-size: 28px; font-weight: 500;
+    line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+  }
+  .stat .v .unit {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    color: var(--ink-3); margin-left: 2px; font-weight: 400; letter-spacing: 0;
+  }
+  .stat.accent .v { color: var(--accent); }
+
+  .macro-bar {
+    height: 6px; display: flex; margin-top: 14px; border: 1px solid var(--line-2);
+  }
+  .macro-bar > div { transition: width 0.3s ease; }
+  .macro-bar .protein { background: var(--accent); }
+  .macro-bar .carbs   { background: var(--warn); }
+  .macro-bar .fat     { background: var(--good); }
+  .macro-legend {
+    display: flex; gap: 16px; margin-top: 8px;
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-3);
+  }
+  .macro-legend .dot {
+    display: inline-block; width: 8px; height: 8px; margin-right: 5px; vertical-align: middle;
+  }
+
+  /* ============ List ============ */
+  .entries { border-top: 1px solid var(--ink); }
+  .entries .empty {
+    text-align: center; padding: 60px 20px; color: var(--ink-3);
+    font-family: "Fraunces", serif; font-style: italic; font-size: 18px;
+  }
+  .entry-row {
+    border-bottom: 1px solid var(--line); padding: 14px 0;
+    display: grid; grid-template-columns: 60px 1fr auto; gap: 16px; align-items: center;
+    animation: fadeIn 0.3s ease both;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .entry-time {
+    font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-3);
+    letter-spacing: 0.04em;
+  }
+  .entry-meal {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace; font-size: 9px;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    border: 1px solid var(--ink); padding: 1px 6px; margin-bottom: 4px;
+  }
+  .entry-name {
+    font-family: "Fraunces", serif; font-size: 18px; font-weight: 500; line-height: 1.2;
+  }
+  .entry-meta {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    color: var(--ink-2); margin-top: 4px; letter-spacing: 0.02em;
+  }
+  .entry-meta .sep { color: var(--line-2); margin: 0 6px; }
+  .entry-meta .accent { color: var(--accent); font-weight: 500; }
+  .entry-actions { display: flex; gap: 6px; opacity: 0.4; transition: opacity 0.15s; }
+  .entry-row:hover .entry-actions { opacity: 1; }
+  .entry-notes {
+    grid-column: 2 / 3;
+    font-family: "Fraunces", serif; font-style: italic; font-size: 13px;
+    color: var(--ink-3); margin-top: 4px;
+  }
+
+  .toolbar input[type="date"] {
+    font-family: "JetBrains Mono", monospace; font-size: 12px;
+    background: transparent; border: 1px solid var(--line-2);
+    padding: 6px 10px; color: var(--ink);
+  }
+
+  /* ============ Settings panel ============ */
+  .panel-overlay {
+    position: fixed; inset: 0; background: rgba(26, 20, 16, 0.4);
+    z-index: 50; display: none;
+  }
+  .panel-overlay.open { display: block; }
+  .panel {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: min(440px, 100vw);
+    background: var(--paper); border-left: 1px solid var(--ink);
+    z-index: 51; padding: 28px 28px 40px;
+    overflow-y: auto;
+    transform: translateX(100%); transition: transform 0.25s ease;
+    box-shadow: -8px 0 24px rgba(0,0,0,0.08);
+  }
+  .panel.open { transform: translateX(0); }
+  .panel h3 {
+    font-family: "Fraunces", serif; font-style: italic;
+    font-size: 24px; font-weight: 500; margin-bottom: 4px;
+  }
+  .panel .sub-head {
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-3);
+    margin-top: 26px; margin-bottom: 12px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--line);
+  }
+  .token-display {
+    background: var(--paper-2); border: 1px solid var(--line-2);
+    padding: 10px 12px; margin: 8px 0;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    word-break: break-all; line-height: 1.6;
+    user-select: all;
+    color: var(--ink-2);
+  }
+  .token-display.revealed { color: var(--ink); }
+  .panel .help {
+    font-size: 12px; color: var(--ink-3); line-height: 1.6;
+    margin-bottom: 8px;
+  }
+  .panel .help code {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    background: var(--paper-2); padding: 1px 5px;
+  }
+  .panel-close {
+    position: absolute; top: 18px; right: 18px;
+    background: transparent; border: none; cursor: pointer;
+    font-family: "JetBrains Mono", monospace; font-size: 18px;
+    color: var(--ink-3); padding: 4px 8px;
+  }
+  .panel-close:hover { color: var(--accent); background: transparent; }
+
+  /* ============ Toast ============ */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper); padding: 10px 18px;
+    font-family: "JetBrains Mono", monospace; font-size: 12px;
+    letter-spacing: 0.05em; z-index: 200;
+    animation: slideUp 0.3s ease; max-width: 90vw;
+  }
+  .toast.err { background: var(--danger); }
+  @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+  .footnote {
+    margin-top: 60px; padding-top: 16px; border-top: 1px solid var(--line);
+    font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: 0.14em; text-align: center;
+  }
+
+  .auth-error {
+    color: var(--danger); font-size: 13px; margin: -8px 0 14px;
+    font-family: "JetBrains Mono", monospace;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ AUTH SCREEN ============ -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-card">
+    <h1 class="display">Ledger<em>,</em></h1>
+    <div class="sub">a quiet food log.</div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-tab="login">Sign in</div>
+      <div class="auth-tab" data-tab="register">Create account</div>
+    </div>
+
+    <form id="authForm" autocomplete="on">
+      <div class="field">
+        <label>Email</label>
+        <input id="authEmail" type="email" required autocomplete="email" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="authPassword" type="password" required minlength="8" autocomplete="current-password" />
+      </div>
+      <div class="auth-error" id="authError" style="display:none"></div>
+      <button type="submit" class="full" id="authSubmit">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div class="shell" id="appShell" style="display:none">
+
+  <header class="mast">
+    <div class="mast-title display">Ledger<em>,</em><br/>a food log.</div>
+    <div class="mast-meta">
+      <div>Vol. I &middot; <b id="todayDate">—</b></div>
+      <div>
+        <b id="userEmail">—</b>
+        <span class="sep">·</span>
+        <a id="settingsBtn">settings</a>
+        <span class="sep">·</span>
+        <a id="signOutBtn">sign out</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+
+      <section>
+        <h2 class="sec">New entry <span class="pill">+</span></h2>
+        <form class="entry" id="entryForm">
+          <div class="full">
+            <label>Food</label>
+            <input id="f_name" placeholder="grilled chicken, oats with banana, ..." required />
+          </div>
+          <div>
+            <label>Weight (g)</label>
+            <input id="f_weight" type="number" step="1" min="0" class="num" required />
+          </div>
+          <div>
+            <label>Meal</label>
+            <select id="f_meal">
+              <option value="breakfast">breakfast</option>
+              <option value="lunch">lunch</option>
+              <option value="dinner">dinner</option>
+              <option value="snack">snack</option>
+            </select>
+          </div>
+          <div>
+            <label>Calories (kcal)</label>
+            <input id="f_cal" type="number" step="0.1" min="0" class="num" />
+          </div>
+          <div>
+            <label>Protein (g)</label>
+            <input id="f_p" type="number" step="0.1" min="0" class="num" />
+          </div>
+          <div>
+            <label>Carbs (g)</label>
+            <input id="f_c" type="number" step="0.1" min="0" class="num" />
+          </div>
+          <div>
+            <label>Fat (g)</label>
+            <input id="f_f" type="number" step="0.1" min="0" class="num" />
+          </div>
+
+          <div class="micros-toggle" id="microsToggle">+ add micros &amp; notes</div>
+          <div class="micros-fields hidden" id="microsFields">
+            <div>
+              <label>Fiber (g)</label>
+              <input id="f_fib" type="number" step="0.1" min="0" class="num" />
+            </div>
+            <div>
+              <label>Sugar (g)</label>
+              <input id="f_sug" type="number" step="0.1" min="0" class="num" />
+            </div>
+            <div>
+              <label>Sodium (mg)</label>
+              <input id="f_sod" type="number" step="1" min="0" class="num" />
+            </div>
+            <div>
+              <label>Time</label>
+              <input id="f_time" type="time" class="num" />
+            </div>
+            <div class="full">
+              <label>Notes</label>
+              <textarea id="f_notes" rows="1" placeholder="optional"></textarea>
+            </div>
+          </div>
+
+          <div class="submit-row">
+            <button type="button" class="ghost" id="resetBtn">Clear</button>
+            <button type="submit" id="saveBtn">Save entry</button>
+          </div>
+        </form>
+      </section>
+
+      <section>
+        <div class="totals" id="totals">
+          <div class="totals-head">
+            <div class="date display" id="totalsDate">Today</div>
+            <div class="count" id="totalsCount">0 entries</div>
+          </div>
+          <div class="totals-grid">
+            <div class="stat accent">
+              <div class="k">Calories</div>
+              <div class="v" id="t_cal">0<span class="unit">kcal</span></div>
+            </div>
+            <div class="stat">
+              <div class="k">Protein</div>
+              <div class="v" id="t_p">0<span class="unit">g</span></div>
+            </div>
+            <div class="stat">
+              <div class="k">Carbs</div>
+              <div class="v" id="t_c">0<span class="unit">g</span></div>
+            </div>
+            <div class="stat">
+              <div class="k">Fat</div>
+              <div class="v" id="t_f">0<span class="unit">g</span></div>
+            </div>
+          </div>
+          <div class="macro-bar" id="macroBar">
+            <div class="protein" style="width:0"></div>
+            <div class="carbs" style="width:0"></div>
+            <div class="fat" style="width:0"></div>
+          </div>
+          <div class="macro-legend">
+            <span><span class="dot" style="background:var(--accent)"></span><span id="leg_p">P 0%</span></span>
+            <span><span class="dot" style="background:var(--warn)"></span><span id="leg_c">C 0%</span></span>
+            <span><span class="dot" style="background:var(--good)"></span><span id="leg_f">F 0%</span></span>
+          </div>
+        </div>
+
+        <h2 class="sec">
+          The log
+          <span style="display:flex;gap:8px;align-items:center" class="toolbar">
+            <input type="date" id="dateFilter" />
+            <button class="tiny" id="todayBtn">today</button>
+            <button class="tiny" id="refreshBtn">refresh</button>
+          </span>
+        </h2>
+        <div class="entries" id="entries"></div>
+      </section>
+
+    </div>
+
+    <div class="footnote">
+      PostgreSQL &middot; readable by your MCP &middot; Made with restraint.
+    </div>
+  </main>
+</div>
+
+<!-- ============ SETTINGS PANEL ============ -->
+<div class="panel-overlay" id="panelOverlay"></div>
+<div class="panel" id="panel">
+  <button class="panel-close" id="panelClose">×</button>
+  <h3>Settings</h3>
+
+  <div class="sub-head">Account</div>
+  <div class="help">Signed in as <b id="panel_email">—</b></div>
+
+  <div class="sub-head">Export</div>
+  <div class="help">Download your full log as XLSX. Open it directly in Excel, Numbers, or import into Google Sheets via <code>File → Import</code>.</div>
+  <button id="exportBtn" style="margin-top:6px">Download XLSX</button>
+
+  <div class="sub-head">MCP token</div>
+  <div class="help">Use this token in your Claude Desktop config so Claude can read &amp; write your log via the MCP server.</div>
+  <div class="token-display" id="tokenDisplay">••••••••••••••••••••••••</div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button class="ghost tiny" id="revealTokenBtn">Reveal</button>
+    <button class="ghost tiny" id="copyTokenBtn">Copy</button>
+    <button class="ghost tiny danger" id="rotateTokenBtn">Rotate</button>
+  </div>
+  <div class="help" style="margin-top:14px">
+    API base URL: <code id="apiBaseDisplay">—</code>
+  </div>
+
+  <div class="sub-head">Danger zone</div>
+  <button class="ghost" id="signOutPanelBtn">Sign out</button>
+</div>
+
+<div id="toastHost"></div>
+
+<script>
+/* ============================================================================
+   Food Tracker SPA
+   ========================================================================= */
+
+const API_BASE = window.location.origin; // backend serves SPA on same origin
+
+const state = {
+  token: localStorage.getItem("ft.token") || null,
+  user: null,
+  entries: [],
+  filterDate: todayStr(),
+  editingId: null,
+  authMode: "login",
+  tokenRevealed: false,
+};
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function nowTime() { return new Date().toTimeString().slice(0, 5); }
+function $(id) { return document.getElementById(id); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+function fmt(n, d = 0) {
+  if (n == null || isNaN(n)) return "0";
+  return Number(n).toFixed(d).replace(/\.0+$/, "");
+}
+
+function toast(msg, err = false) {
+  const el = document.createElement("div");
+  el.className = "toast" + (err ? " err" : "");
+  el.textContent = msg;
+  $("toastHost").appendChild(el);
+  setTimeout(() => el.remove(), 2400);
+}
+
+/* ----- API ----- */
+async function api(path, opts = {}) {
+  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+  if (state.token) headers["Authorization"] = `Bearer ${state.token}`;
+  const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+  if (res.status === 401) {
+    state.token = null;
+    localStorage.removeItem("ft.token");
+    showAuth();
+    throw new Error("Session expired — please sign in again");
+  }
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try { const j = await res.json(); msg = j.detail || msg; } catch {}
+    throw new Error(msg);
+  }
+  if (res.status === 204) return null;
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("application/json")) return res.json();
+  return res.blob();
+}
+
+/* ----- Auth flow ----- */
+function showAuth() {
+  $("authScreen").style.display = "block";
+  $("appShell").style.display = "none";
+}
+
+function showApp() {
+  $("authScreen").style.display = "none";
+  $("appShell").style.display = "block";
+}
+
+async function bootstrap() {
+  if (!state.token) { showAuth(); return; }
+  try {
+    state.user = await api("/api/me");
+    $("userEmail").textContent = state.user.email;
+    $("panel_email").textContent = state.user.email;
+    $("apiBaseDisplay").textContent = API_BASE;
+    showApp();
+    await refresh();
+  } catch (e) {
+    showAuth();
+  }
+}
+
+async function doAuth(ev) {
+  ev.preventDefault();
+  const email = $("authEmail").value.trim();
+  const password = $("authPassword").value;
+  $("authError").style.display = "none";
+  $("authSubmit").disabled = true;
+  try {
+    const data = await api(`/api/auth/${state.authMode}`, {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    state.token = data.api_token;
+    localStorage.setItem("ft.token", state.token);
+    await bootstrap();
+  } catch (e) {
+    $("authError").textContent = e.message;
+    $("authError").style.display = "block";
+  } finally {
+    $("authSubmit").disabled = false;
+  }
+}
+
+function setAuthTab(mode) {
+  state.authMode = mode;
+  document.querySelectorAll(".auth-tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.tab === mode);
+  });
+  $("authSubmit").textContent = mode === "login" ? "Sign in" : "Create account";
+  $("authPassword").autocomplete = mode === "login" ? "current-password" : "new-password";
+  $("authError").style.display = "none";
+}
+
+function signOut() {
+  state.token = null;
+  state.user = null;
+  state.entries = [];
+  localStorage.removeItem("ft.token");
+  closePanel();
+  showAuth();
+  $("authEmail").value = "";
+  $("authPassword").value = "";
+  toast("Signed out.");
+}
+
+/* ----- Settings panel ----- */
+function openPanel() {
+  $("panelOverlay").classList.add("open");
+  $("panel").classList.add("open");
+  state.tokenRevealed = false;
+  $("tokenDisplay").classList.remove("revealed");
+  $("tokenDisplay").textContent = "••••••••••••••••••••••••";
+  $("revealTokenBtn").textContent = "Reveal";
+}
+function closePanel() {
+  $("panelOverlay").classList.remove("open");
+  $("panel").classList.remove("open");
+}
+function toggleToken() {
+  state.tokenRevealed = !state.tokenRevealed;
+  if (state.tokenRevealed) {
+    $("tokenDisplay").textContent = state.user.api_token;
+    $("tokenDisplay").classList.add("revealed");
+    $("revealTokenBtn").textContent = "Hide";
+  } else {
+    $("tokenDisplay").textContent = "••••••••••••••••••••••••";
+    $("tokenDisplay").classList.remove("revealed");
+    $("revealTokenBtn").textContent = "Reveal";
+  }
+}
+async function copyToken() {
+  await navigator.clipboard.writeText(state.user.api_token);
+  toast("Token copied.");
+}
+async function rotateToken() {
+  if (!confirm("Rotating breaks any MCP servers using the old token. Continue?")) return;
+  try {
+    const data = await api("/api/me/rotate-token", { method: "POST" });
+    state.user.api_token = data.api_token;
+    state.token = data.api_token;
+    localStorage.setItem("ft.token", state.token);
+    if (state.tokenRevealed) $("tokenDisplay").textContent = state.user.api_token;
+    toast("Token rotated.");
+  } catch (e) { toast(e.message, true); }
+}
+async function exportXlsx() {
+  try {
+    const res = await fetch(`${API_BASE}/api/export/xlsx`, {
+      headers: { "Authorization": `Bearer ${state.token}` },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const cd = res.headers.get("Content-Disposition") || "";
+    const nameMatch = cd.match(/filename="?([^"]+)"?/);
+    const fname = nameMatch ? nameMatch[1] : "food-log.xlsx";
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = fname; a.click();
+    URL.revokeObjectURL(url);
+    toast("XLSX downloaded.");
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ----- Entries ----- */
+async function loadEntries() {
+  state.entries = await api("/api/entries?limit=2000");
+}
+
+async function refresh() {
+  await loadEntries();
+  render();
+}
+
+function render() {
+  $("todayDate").textContent = todayStr();
+  $("dateFilter").value = state.filterDate;
+
+  const dayEntries = state.entries
+    .filter(e => e.entry_date === state.filterDate)
+    .sort((a, b) => (a.entry_time || "").localeCompare(b.entry_time || ""));
+
+  const d = new Date(state.filterDate + "T00:00:00");
+  const fmtDate = d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  $("totalsDate").textContent = state.filterDate === todayStr() ? "Today, " + fmtDate : fmtDate;
+  $("totalsCount").textContent = `${dayEntries.length} ${dayEntries.length === 1 ? "entry" : "entries"}`;
+
+  const sum = (k) => dayEntries.reduce((a, e) => a + (Number(e[k]) || 0), 0);
+  const cal = sum("calories"), p = sum("protein_g"), c = sum("carbs_g"), f = sum("fat_g");
+  $("t_cal").innerHTML = `${fmt(cal)}<span class="unit">kcal</span>`;
+  $("t_p").innerHTML = `${fmt(p, 1)}<span class="unit">g</span>`;
+  $("t_c").innerHTML = `${fmt(c, 1)}<span class="unit">g</span>`;
+  $("t_f").innerHTML = `${fmt(f, 1)}<span class="unit">g</span>`;
+
+  const pk = p * 4, ck = c * 4, fk = f * 9;
+  const tot = pk + ck + fk || 1;
+  const pp = pk / tot * 100, cp = ck / tot * 100, fp = fk / tot * 100;
+  const bar = $("macroBar");
+  bar.children[0].style.width = pp + "%";
+  bar.children[1].style.width = cp + "%";
+  bar.children[2].style.width = fp + "%";
+  $("leg_p").textContent = `P ${fmt(pp)}%`;
+  $("leg_c").textContent = `C ${fmt(cp)}%`;
+  $("leg_f").textContent = `F ${fmt(fp)}%`;
+
+  const list = $("entries");
+  if (dayEntries.length === 0) {
+    list.innerHTML = `<div class="empty">No entries on this day. Yet.</div>`;
+    return;
+  }
+  list.innerHTML = dayEntries.map(e => {
+    const meta = [
+      `<span class="accent">${fmt(e.calories)} kcal</span>`,
+      `${fmt(e.weight_g)}g`,
+      `P ${fmt(e.protein_g, 1)}`,
+      `C ${fmt(e.carbs_g, 1)}`,
+      `F ${fmt(e.fat_g, 1)}`,
+    ].join('<span class="sep">·</span>');
+    const notes = e.notes ? `<div class="entry-notes">"${escapeHtml(e.notes)}"</div>` : "";
+    return `
+      <div class="entry-row" data-id="${e.id}">
+        <div class="entry-time num">${e.entry_time || "—"}</div>
+        <div>
+          <span class="entry-meal">${e.meal_type}</span>
+          <div class="entry-name">${escapeHtml(e.food_name)}</div>
+          <div class="entry-meta">${meta}</div>
+          ${notes}
+        </div>
+        <div class="entry-actions">
+          <button class="tiny" data-act="edit">edit</button>
+          <button class="tiny danger" data-act="del">×</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function readForm() {
+  return {
+    food_name: $("f_name").value.trim(),
+    weight_g:  parseFloat($("f_weight").value) || 0,
+    meal_type: $("f_meal").value,
+    calories:  parseFloat($("f_cal").value) || 0,
+    protein_g: parseFloat($("f_p").value) || 0,
+    carbs_g:   parseFloat($("f_c").value) || 0,
+    fat_g:     parseFloat($("f_f").value) || 0,
+    fiber_g:   parseFloat($("f_fib").value) || 0,
+    sugar_g:   parseFloat($("f_sug").value) || 0,
+    sodium_mg: parseFloat($("f_sod").value) || 0,
+    notes:     $("f_notes").value.trim() || null,
+    entry_time: $("f_time").value || nowTime(),
+  };
+}
+
+function clearForm() {
+  ["f_name","f_weight","f_cal","f_p","f_c","f_f","f_fib","f_sug","f_sod","f_notes","f_time"]
+    .forEach(id => $(id).value = "");
+  state.editingId = null;
+  $("saveBtn").textContent = "Save entry";
+}
+
+async function onSubmit(ev) {
+  ev.preventDefault();
+  const data = readForm();
+  if (!data.food_name || !data.weight_g) {
+    toast("Need a food name and a weight", true);
+    return;
+  }
+  $("saveBtn").disabled = true;
+  try {
+    if (state.editingId) {
+      await api(`/api/entries/${state.editingId}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
+      toast("Updated.");
+    } else {
+      await api("/api/entries", {
+        method: "POST",
+        body: JSON.stringify({ ...data, entry_date: state.filterDate }),
+      });
+      toast("Logged.");
+    }
+    clearForm();
+    await refresh();
+  } catch (err) { toast(err.message, true); }
+  finally { $("saveBtn").disabled = false; }
+}
+
+async function onListClick(ev) {
+  const btn = ev.target.closest("button[data-act]");
+  if (!btn) return;
+  const row = btn.closest(".entry-row");
+  const id = row.dataset.id;
+  const entry = state.entries.find(e => e.id === id);
+  if (!entry) return;
+
+  if (btn.dataset.act === "del") {
+    if (!confirm(`Delete "${entry.food_name}"?`)) return;
+    try { await api(`/api/entries/${id}`, { method: "DELETE" }); toast("Deleted."); await refresh(); }
+    catch (err) { toast(err.message, true); }
+  } else if (btn.dataset.act === "edit") {
+    state.editingId = id;
+    $("f_name").value = entry.food_name;
+    $("f_weight").value = entry.weight_g || "";
+    $("f_meal").value = entry.meal_type || "snack";
+    $("f_cal").value = entry.calories || "";
+    $("f_p").value = entry.protein_g || "";
+    $("f_c").value = entry.carbs_g || "";
+    $("f_f").value = entry.fat_g || "";
+    $("f_fib").value = entry.fiber_g || "";
+    $("f_sug").value = entry.sugar_g || "";
+    $("f_sod").value = entry.sodium_mg || "";
+    $("f_notes").value = entry.notes || "";
+    $("f_time").value = entry.entry_time || "";
+    $("microsFields").classList.remove("hidden");
+    $("saveBtn").textContent = "Update entry";
+    $("f_name").focus();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+/* ----- Wire up ----- */
+window.addEventListener("DOMContentLoaded", () => {
+  $("todayDate").textContent = todayStr();
+  $("dateFilter").value = state.filterDate;
+
+  // Auth
+  document.querySelectorAll(".auth-tab").forEach(t =>
+    t.addEventListener("click", () => setAuthTab(t.dataset.tab)));
+  $("authForm").addEventListener("submit", doAuth);
+
+  // App
+  $("entryForm").addEventListener("submit", onSubmit);
+  $("entries").addEventListener("click", onListClick);
+  $("resetBtn").addEventListener("click", clearForm);
+  $("refreshBtn").addEventListener("click", refresh);
+  $("todayBtn").addEventListener("click", () => { state.filterDate = todayStr(); render(); });
+  $("dateFilter").addEventListener("change", e => { state.filterDate = e.target.value; render(); });
+  $("microsToggle").addEventListener("click", () => $("microsFields").classList.toggle("hidden"));
+  $("signOutBtn").addEventListener("click", signOut);
+
+  // Settings panel
+  $("settingsBtn").addEventListener("click", openPanel);
+  $("panelClose").addEventListener("click", closePanel);
+  $("panelOverlay").addEventListener("click", closePanel);
+  $("revealTokenBtn").addEventListener("click", toggleToken);
+  $("copyTokenBtn").addEventListener("click", copyToken);
+  $("rotateTokenBtn").addEventListener("click", rotateToken);
+  $("exportBtn").addEventListener("click", exportXlsx);
+  $("signOutPanelBtn").addEventListener("click", signOut);
+
+  bootstrap();
+});
+</script>
+</body>
+</html>

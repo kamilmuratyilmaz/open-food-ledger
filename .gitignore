@@ -1,0 +1,50 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets / local config
+.mcp.json
+.env
+.env.*
+!.env.example
+secrets.json
+secrets.toml
+secrets.yaml
+secrets.yml
+credentials.json
+credentials.yaml
+credentials.yml
+*.secrets
+
+# TLS / keys / certs
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# Local databases / dumps
+*.db
+*.sqlite
+*.sqlite3
+*.sql.gz
+*.dump
+pgdata/
+db_data/
+
+# Logs
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
