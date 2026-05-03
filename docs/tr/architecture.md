@@ -75,7 +75,7 @@ food_entries:
   created_at  timestamptz DEFAULT now()
 ```
 
-Tablolar uygulama boot'ta `Base.metadata.create_all(engine)` ile oluşturulur — migration aracı yok. Şema değişikliği için elle migration veya schema reset gerekir.
+Tablolar Alembic ile yönetiliyor (`migrations/` klasörü, `alembic.ini`). Compose'da api service'i app start'tan önce `alembic upgrade head` koşuyor — application code'da hiçbir `create_all` veya lifespan hook'u yok. Schema değişikliği: model'i güncelle, `uv run alembic revision --autogenerate -m "..."`, PR'a giren migration file'ı code review'dan geçiyor.
 
 ## Stack detayı
 

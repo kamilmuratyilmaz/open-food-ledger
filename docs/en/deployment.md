@@ -18,9 +18,13 @@ The current `frontend` container is a dev-grade Vite dev server. For production:
 
 If you self-host Postgres in compose, backups, replication, point-in-time recovery, and OS patching are all on you. A managed Postgres service handles most of that. If you stay self-hosted, at minimum do regular `pg_dump` + an offsite copy.
 
-## 5. Add a migration tool
+## 5. Run migrations as a deploy step
 
-`app/main.py` runs `Base.metadata.create_all(engine)` on startup, which auto-creates missing tables. That's dangerous in production — schema changes aren't managed, there's no version history. Pick a Python migration tool, version your schema, and run migrations in your deploy pipeline before the app starts.
+The repo already ships with Alembic (`migrations/` directory, `alembic.ini`). The compose api service runs `alembic upgrade head` before starting the app — fine for single-replica dev. For production:
+
+- If you scale to multiple replicas, run the migration as a **separate CI/CD step** before the app boots. Replicas trying to upgrade simultaneously can race (Alembic uses advisory locks, but it's not bulletproof).
+- If migration fails, halt the pipeline; don't start the app expecting a new schema.
+- New migration: `uv run alembic revision --autogenerate -m "..."` after changing a model. The migration file goes into the PR for code review.
 
 ## 6. Add rate limiting
 

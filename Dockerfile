@@ -19,6 +19,8 @@ RUN uv sync --frozen --no-install-project --no-dev
 # --no-install-project (the project itself isn't a library to install;
 # `app/` is just imported from cwd at runtime).
 COPY app ./app
+COPY alembic.ini ./
+COPY migrations ./migrations
 
 # ---- Stage 2: minimal runtime ----
 FROM python:3.13-slim
@@ -36,6 +38,8 @@ RUN groupadd --system --gid 1000 app \
 # Copy venv + source from builder, owned by the unprivileged user.
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
 COPY --from=builder --chown=app:app /app/app /app/app
+COPY --from=builder --chown=app:app /app/alembic.ini /app/alembic.ini
+COPY --from=builder --chown=app:app /app/migrations /app/migrations
 
 # Put the venv's executables on PATH so `uvicorn` resolves without `uv run`.
 ENV PATH="/app/.venv/bin:$PATH"

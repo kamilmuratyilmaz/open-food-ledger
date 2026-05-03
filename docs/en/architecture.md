@@ -75,7 +75,7 @@ food_entries:
   created_at  timestamptz DEFAULT now()
 ```
 
-Tables are created on app boot via `Base.metadata.create_all(engine)` — there's no migration tool yet. Schema changes require a manual migration or a schema reset.
+Tables are managed by Alembic (`migrations/` directory, `alembic.ini`). The compose api service runs `alembic upgrade head` before starting the app — application code has no `create_all` or lifespan hook. Schema changes: edit the model, run `uv run alembic revision --autogenerate -m "..."`, the migration file lands in the PR for code review.
 
 ## Stack detail
 

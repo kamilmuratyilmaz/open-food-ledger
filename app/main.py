@@ -1,12 +1,10 @@
-"""FastAPI app assembly: lifespan, middleware, routers.
+"""FastAPI app assembly: middleware + routers.
 
-Frontend is served by a separate nginx container (see frontend/), which
-proxies /api/* here. CORS allow_origins covers cross-container calls
-when the frontend container hits this API directly during dev.
+Schema is managed by Alembic. Migrations are applied as a separate
+step before the app starts (see docker-compose.yml's api command and
+docs/*/deployment.md), not from inside the application.
 """
 from __future__ import annotations
-
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,19 +12,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.analytics.routes import router as analytics_router
 from app.auth.routes import router as auth_router
 from app.config import ALLOWED_ORIGINS
-from app.db import models  # noqa: F401  -- registers tables on Base.metadata
-from app.db.session import Base, engine
 from app.entries.routes import router as entries_router
 from app.export.routes import router as export_router
 
 
-@asynccontextmanager
-async def lifespan(_app: FastAPI):
-    Base.metadata.create_all(engine)
-    yield
-
-
-app = FastAPI(title="Open Food Ledger", version="1.0", lifespan=lifespan)
+app = FastAPI(title="Open Food Ledger", version="1.0")
 
 app.add_middleware(
     CORSMiddleware,

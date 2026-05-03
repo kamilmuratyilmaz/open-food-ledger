@@ -18,9 +18,13 @@ Mevcut `frontend` container'ı dev-grade Vite dev server. Production için: `npm
 
 Postgres'i compose ile self-host yapacaksan backup, replication, point-in-time recovery, OS patch sorumlulukları sende. Managed bir servis (cloud provider'ın Postgres ürünleri) bu işlerin çoğunu üzerinden alır. Self-host'ta kalacaksan en azından düzenli pg_dump + offsite kopyala.
 
-## 5. Migration tool'u kur
+## 5. Migration'ları deploy step'inde çalıştır
 
-`app/main.py`'da `Base.metadata.create_all(engine)` startup'ta otomatik şema yaratıyor — production'da tehlikeli (schema değişikliklerini yönetemezsin, version geçmişi yok). Bir Python migration aracı kurup şemayı versiyonla; deploy pipeline'da migration'ı app start'tan önce çalıştır.
+Repo Alembic ile geliyor (`migrations/` klasörü, `alembic.ini`). Compose'da api service'i app start'tan önce `alembic upgrade head` koşuyor — single-replica dev için yeterli. Production'da:
+
+- Multi-replica deployment'a geçeceksen migration'ı **CI/CD pipeline'ında** ayrı bir step olarak çalıştır, app boot'tan önce. Her replica'nın aynı anda upgrade çalıştırması race condition yaratabilir (Alembic advisory lock kullanıyor ama %100 garanti değil).
+- Migration başarısız olursa pipeline'ı dur, app'i yeni schema beklerek başlatma.
+- Yeni migration: `uv run alembic revision --autogenerate -m "..."` model değişikliğinden sonra. PR'a giriyor, code review'a açık.
 
 ## 6. Rate limiting ekle
 
