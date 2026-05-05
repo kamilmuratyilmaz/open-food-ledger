@@ -5,6 +5,8 @@
 
 Kişisel kalori, makro ve gramaj günlüğü. Tarayıcıdan veya yapay zeka asistanından yemek kaydı tut, gün/hafta toplamlarını gör, hedeflerine olan ilerlemeyi izle.
 
+![Demo](assets/Video%20Project.gif)
+
 ## Bu ne işe yarar?
 
 Yediklerini kayda almanın üç yolu var:

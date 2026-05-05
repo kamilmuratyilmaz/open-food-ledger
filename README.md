@@ -5,6 +5,8 @@
 
 A personal calorie, macro, and gram-weight food journal. Log meals from your browser or through an AI assistant, see daily/weekly totals, and track progress toward your goals.
 
+![Demo](assets/Video%20Project.gif)
+
 ## What does it do?
 
 Three ways to log what you eat:
